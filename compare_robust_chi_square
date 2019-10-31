@@ -1,0 +1,231 @@
+comp.chi.square <- function(filname,n.rep,M0.model,M1.model) {
+  res <- matrix(NA,nrow=n.rep,ncol=24)
+  colnames(res) <- c("M1.EXP.STR.2010","M0.EXP.STR.2010","DIFF.EXP.STR.2010",
+                     "M1.EXP.UNS.2010","M0.EXP.UNS.2010","DIFF.EXP.UNS.2010",
+                     "M1.OBS.STR.2010","M0.OBS.STR.2010","DIFF.OBS.STR.2010",
+                     "M1.OBS.UNS.2010","M0.OBS.UNS.2010","DIFF.OBS.UNS.2010",
+                     
+                     "M1.EXP.STR.2001","M0.EXP.STR.2001","DIFF.EXP.STR.2001",
+                     "M1.EXP.UNS.2001","M0.EXP.UNS.2001","DIFF.EXP.UNS.2001",
+                     "M1.OBS.STR.2001","M0.OBS.STR.2001","DIFF.OBS.STR.2001",
+                     "M1.OBS.UNS.2001","M0.OBS.UNS.2001","DIFF.OBS.UNS.2001")
+  
+  for(i in 1:n.rep){
+    cat(i, "  -- ")
+    curr_filename <- paste0(filname,i,".csv")
+    cat(curr_filename)
+    #Checking in file exists
+    if(!file.exists(curr_filename)){
+      cat("  NOT OPENED\n")
+      next}
+    
+    dat <- read.csv(curr_filename,row.names = NULL)
+    cat(" OPENED  \n")
+    
+    #FITS:::
+    
+    #1. EXP.STR: information= "expected", h1.information= "structured" 
+    M1.EXP.STR <- lavaan(data = dat,
+                         model = M1.model,
+                         estimator = "MLM",
+                         se = "robust.sem", 
+                         information = "expected",
+                         h1.information = "structured")
+    
+    M0.EXP.STR <- lavaan(data = dat,
+                         model = M0.model,
+                         estimator = "MLM",
+                         se = "robust.sem", 
+                         information = "expected",
+                         h1.information = "structured")
+    
+
+    #2. EXP.UNS: information= "expected", h1.information= "unstructured"
+    M1.EXP.UNS <- lavaan(data = dat,
+                         model = M1.model,
+                         estimator = "MLM",
+                         se = "robust.sem", 
+                         information = "expected",
+                         h1.information = "unstructured")
+    
+    M0.EXP.UNS <- lavaan(data = dat,
+                         model = M0.model,
+                         estimator = "MLM",
+                         se = "robust.sem", 
+                         information = "expected",
+                         h1.information = "unstructured")
+    
+    
+    #3. OBS.STR1: information= "observed", h1.information= "structured",   observed.information = "h1"
+    M1.OBS.STR <- lavaan(data = dat,
+                         model = M1.model,
+                         estimator = "MLM",
+                         se = "robust.sem", 
+                         information = "observed",
+                         h1.information = "structured",
+                         observed.information = "h1")
+    
+    M0.OBS.STR <- lavaan(data = dat,
+                         model = M0.model,
+                         estimator = "MLM",
+                         se = "robust.sem", 
+                         information = "observed",
+                         h1.information = "structured",
+                         observed.information = "h1")
+    
+    #4. OBS.UNS1: information= "observed", h1.information= "unstructured"  observed.information = "h1"
+    M1.OBS.UNS <- lavaan(data = dat,
+                         model = M1.model,
+                         estimator = "MLM",
+                         se = "robust.sem", 
+                         information = "observed",
+                         h1.information = "unstructured",
+                         observed.information = "h1")
+    
+    M0.OBS.UNS <- lavaan(data = dat,
+                         model = M0.model,
+                         estimator = "MLM",
+                         se = "robust.sem", 
+                         information = "observed",
+                         h1.information = "unstructured",
+                         observed.information = "h1")
+    
+    ####Chi square tests:
+    
+    ### Satorra Bentler 2010:
+    #1. EXP.STR: information= "expected", h1.information= "structured" 
+    if(is.na(fitMeasures(M1.EXP.STR,"chisq.scaled")) |
+       is.na(fitMeasures(M0.EXP.STR,"chisq.scaled"))){
+      res[i,"M1.EXP.STR.2010"] <- NA
+      res[i,"M0.EXP.STR.2010"] <- NA
+      res[i,"DIFF.EXP.STR.2010"] <- NA
+      
+      res[i,"M1.EXP.STR.2001"] <- NA
+      res[i,"M0.EXP.STR.2001"] <- NA
+      res[i,"DIFF.EXP.STR.2001"] <- NA
+      
+    }else{
+    EXP.STR.2010 <- lavTestLRT(M1.EXP.STR,
+                               M0.EXP.STR,
+                               method = "satorra.bentler.2010")
+    
+    res[i,"M1.EXP.STR.2010"] <- EXP.STR.2010$Chisq[1]
+    res[i,"M0.EXP.STR.2010"] <- EXP.STR.2010$Chisq[2]
+    res[i,"DIFF.EXP.STR.2010"] <- EXP.STR.2010$`Chisq diff`[2]
+    
+    EXP.STR.2001 <- lavTestLRT(M1.EXP.STR,
+                               M0.EXP.STR,
+                               method = "satorra.bentler.2001")
+    
+    res[i,"M1.EXP.STR.2001"] <- EXP.STR.2001$Chisq[1]
+    res[i,"M0.EXP.STR.2001"] <- EXP.STR.2001$Chisq[2]
+    res[i,"DIFF.EXP.STR.2001"] <- EXP.STR.2001$`Chisq diff`[2]
+
+    }
+    
+    #2. EXP.UNS: information= "expected", h1.information= "unstructured"
+    if(is.na(fitMeasures(M1.EXP.UNS,"chisq.scaled")) |
+       is.na(fitMeasures(M0.EXP.UNS,"chisq.scaled"))){
+      res[i,"M1.EXP.UNS.2010"] <- NA
+      res[i,"M0.EXP.UNS.2010"] <- NA
+      res[i,"DIFF.EXP.UNS.2010"] <- NA
+      
+      res[i,"M1.EXP.UNS.2001"] <- NA
+      res[i,"M0.EXP.UNS.2001"] <- NA
+      res[i,"DIFF.EXP.UNS.2001"] <- NA
+    }else{
+     EXP.UNS.2010 <- lavTestLRT(M1.EXP.UNS,
+                               M0.EXP.UNS,
+                               method="satorra.bentler.2010")
+     res[i,"M1.EXP.UNS.2010"] <- EXP.UNS.2010$Chisq[1]
+     res[i,"M0.EXP.UNS.2010"] <- EXP.UNS.2010$Chisq[2]
+     res[i,"DIFF.EXP.UNS.2010"] <- EXP.UNS.2010$`Chisq diff`[2]
+     
+     EXP.UNS.2001 <- lavTestLRT(M1.EXP.UNS,
+                                M0.EXP.UNS,
+                                method="satorra.bentler.2001")   
+     
+     res[i,"M1.EXP.UNS.2001"] <- EXP.UNS.2001$Chisq[1]
+     res[i,"M0.EXP.UNS.2001"] <- EXP.UNS.2001$Chisq[2]
+     res[i,"DIFF.EXP.UNS.2001"] <- EXP.UNS.2001$`Chisq diff`[2]
+    }
+    
+    
+    #3. OBS.STR1: information= "observed", h1.information= "structured",   observed.information = "h1"
+    if(is.na(fitMeasures(M1.OBS.STR,"chisq.scaled")) |
+       is.na(fitMeasures(M0.OBS.STR,"chisq.scaled"))){
+      
+      res[i,"M1.OBS.STR.2010"] <- NA
+      res[i,"M0.OBS.STR.2010"] <- NA
+      res[i,"DIFF.OBS.STR.2010"] <- NA
+      
+      res[i,"M1.OBS.STR.2001"] <- NA
+      res[i,"M0.OBS.STR.2001"] <- NA
+      res[i,"DIFF.OBS.STR.2001"] <- NA
+      
+    }else{
+     OBS.STR.2010 <- lavTestLRT(M1.OBS.STR, 
+                               M0.OBS.STR, 
+                               method = "satorra.bentler.2010")
+     
+     res[i,"M1.OBS.STR.2010"] <- OBS.STR.2010$Chisq[1]
+     res[i,"M0.OBS.STR.2010"] <- OBS.STR.2010$Chisq[2]
+     res[i,"DIFF.OBS.STR.2010"] <- OBS.STR.2010$`Chisq diff`[2]
+     
+     OBS.STR.2001 <- lavTestLRT(M1.OBS.STR, 
+                                M0.OBS.STR, 
+                                method = "satorra.bentler.2001")
+     
+     res[i,"M1.OBS.STR.2001"] <- OBS.STR.2001$Chisq[1]
+     res[i,"M0.OBS.STR.2001"] <- OBS.STR.2001$Chisq[2]
+     res[i,"DIFF.OBS.STR.2001"] <- OBS.STR.2001$`Chisq diff`[2]
+    }
+    
+    #4. OBS.UNS1: information= "observed", h1.information= "unstructured"  observed.information = "h1"
+    if(is.na(fitMeasures(M1.OBS.UNS,"chisq.scaled")) |
+       is.na(fitMeasures(M0.OBS.UNS,"chisq.scaled"))){
+      
+      res[i,"M1.OBS.UNS.2010"] <- NA
+      res[i,"M0.OBS.UNS.2010"] <- NA
+      res[i,"DIFF.OBS.UNS.2010"] <- NA
+      
+      res[i,"M1.OBS.UNS.2001"] <- NA
+      res[i,"M0.OBS.UNS.2001"] <- NA
+      res[i,"DIFF.OBS.UNS.2001"] <- NA
+      
+      }else{
+     OBS.UNS.2010 <- lavTestLRT(M1.OBS.UNS, 
+                               M0.OBS.UNS, 
+                               method = "satorra.bentler.2010")
+     
+     res[i,"M1.OBS.UNS.2010"] <- OBS.UNS.2010$Chisq[1]
+     res[i,"M0.OBS.UNS.2010"] <- OBS.UNS.2010$Chisq[2]
+     res[i,"DIFF.OBS.UNS.2010"] <- OBS.UNS.2010$`Chisq diff`[2]
+     
+     OBS.UNS.2001 <- lavTestLRT(M1.OBS.UNS, 
+                                M0.OBS.UNS, 
+                                method = "satorra.bentler.2001")
+     
+     res[i,"M1.OBS.UNS.2001"] <- OBS.UNS.2001$Chisq[1]
+     res[i,"M0.OBS.UNS.2001"] <- OBS.UNS.2001$Chisq[2]
+     res[i,"DIFF.OBS.UNS.2001"] <- OBS.UNS.2001$`Chisq diff`[2]
+      }
+  }
+  write.csv(res,"res_all.csv",row.names = FALSE)
+  summ_means <- colMeans(res)
+  summ_vars  <- apply(res,2,var)
+  
+  summ <- rbind(summ_means,summ_vars)
+  return(list(res,summ))
+}
+
+
+pos.mean <- function(vecc){
+  pos.vec <- vecc[vecc >= 0]
+  return(mean(pos.vec,na.rm = TRUE))
+}
+
+pos.var <- function(vecc){
+  pos.vec <- vecc[vecc >= 0]
+  return(var(pos.vec,na.rm = TRUE))
+}
