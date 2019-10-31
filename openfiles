@@ -1,0 +1,25 @@
+open.files <- function(location,N,file.name){
+  path <- paste0(location, "//")
+  setwd(path)
+  
+  data <- rep(list(NA))
+  counter <- 0
+  
+  for(i in 1:N){
+    fil.name <- paste0(file.name,i,".csv")
+    print(fil.name)
+    
+
+    if(file.exists(fil.name)){
+      data[[i]] <- read.csv(fil.name)
+      counter <- counter + 1
+    }else{
+      next
+    }
+  }
+  
+  cat("\n ",counter,"  files opened")
+  
+  return(data)
+  
+}
